@@ -72,12 +72,18 @@ D2D1_RECT_F b1Rect{ 20.0f, 0, scr_width / 3 - 50.0f, 50.0f };
 D2D1_RECT_F b2Rect{ scr_width / 3 + 20.0f, 0, scr_width * 2 / 3 - 50.0f, 50.0f };
 D2D1_RECT_F b3Rect{ scr_width * 2 / 3 + 20.0f, 0, scr_width - 20.0f, 50.0f };
 
-D2D1_RECT_F b1Txt1Rect{ 30.0f, 5.0f, scr_width / 3 - 50.0f, 50.0f };
-D2D1_RECT_F b2Txt2Rect{ scr_width / 3 + 30.0f, 5.0f, scr_width * 2 / 3 - 50.0f, 50.0f };
-D2D1_RECT_F b3TxtRect{ scr_width * 2 / 3 + 30.0f, 5.0f, scr_width - 20.0f, 50.0f };
+D2D1_RECT_F b1Txt1Rect{ 40.0f, 15.0f, scr_width / 3 - 50.0f, 50.0f };
+D2D1_RECT_F b2Txt2Rect{ scr_width / 3 + 40.0f, 15.0f, scr_width * 2 / 3 - 50.0f, 50.0f };
+D2D1_RECT_F b3TxtRect{ scr_width * 2 / 3 + 40.0f, 15.0f, scr_width - 20.0f, 50.0f };
 
 int level = 1;
 int score = 0;
+
+int intro_frame = 0;
+int intro_frame_delay = 8;
+
+int field_frame = 0;
+int field_frame_delay = 4;
 
 // ********************************************
 
@@ -362,7 +368,7 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
         }
         else
         {
-            if (!in_client)
+            if (in_client)
             {
                 in_client = false;
                 pause = true;
@@ -432,7 +438,7 @@ void CreateResources()
     if (result == FILE_EXIST)ErrExit(eStarted);
     else
     {
-        std::wofstream tmp(Ltmp_file);
+        std::wofstream tmp(tmp_file);
         tmp << L"Game started at: " << std::chrono::system_clock::now();
         tmp.close();
     }
@@ -524,7 +530,7 @@ void CreateResources()
                 }
 
                 hr = Draw->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkSlateBlue), &statusBckgBrush);
-                hr = Draw->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), &TxtBrush);
+                hr = Draw->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Blue), &TxtBrush);
                 hr = Draw->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::MistyRose), &HgltBrush);
                 hr = Draw->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed), &InactBrush);
 
@@ -705,7 +711,7 @@ void CreateResources()
 
                 for (int i = 0; i < 6; ++i)
                 {
-                    wchar_t name[200] = L".\\res\\img\\fighter\\staand\\l\\";
+                    wchar_t name[200] = L".\\res\\img\\fighter\\stand\\l\\";
                     wchar_t add[6] = L"\0";
 
                     wsprintf(add, L"%d", i);
@@ -846,10 +852,31 @@ void CreateResources()
             }
 
         }
-
-
     }
 
+    if (Draw && bigFormat && TxtBrush)
+    {
+        result = 0;
+        PlaySound(L".\\res\\snd\\intro.wav", NULL, SND_ASYNC);
+        
+        while (result < 300)
+        {
+            Draw->BeginDraw();
+            Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+            --intro_frame_delay;
+            if (intro_frame_delay < 0)
+            {
+                intro_frame_delay = 8;
+                ++intro_frame;
+                if (intro_frame > 9)intro_frame = 0;
+            }
+            Draw->DrawText(L"ЗОМБИ АПОКАЛИПСИС\n\n\n   dev. Daniel !", 37, bigFormat, D2D1::RectF(20.0f, 100.0f,
+                scr_width, scr_height), TxtBrush);
+            Draw->EndDraw();
+        
+            ++result;
+        }
+    }
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
@@ -863,6 +890,101 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     CreateResources();
 
+    while (bMsg.message != WM_QUIT)
+    {
+        if ((bRet = PeekMessage(&bMsg, bHwnd, NULL, NULL, PM_REMOVE)) != 0)
+        {
+            if (bRet == -1)ErrExit(eMsg);
+
+            TranslateMessage(&bMsg);
+            DispatchMessage(&bMsg);
+        }
+
+        if (pause)
+        {
+            if (show_help)continue;
+
+            if (Draw && bigFormat && TxtBrush)
+            {
+                Draw->BeginDraw();
+                Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+                --intro_frame_delay;
+                if (intro_frame_delay < 0)
+                {
+                    intro_frame_delay = 8;
+                    ++intro_frame;
+                    if (intro_frame > 9)intro_frame = 0;
+                }
+                Draw->DrawText(L"ПАУЗА", 6, bigFormat, D2D1::RectF(scr_width / 2 - 100.0f, scr_height / 2 - 50.0f,
+                    scr_width, scr_height), TxtBrush);
+                Draw->EndDraw();
+                continue;
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // DRAW THINGS ***************************************
+
+        Draw->BeginDraw();
+
+        if (statusBckgBrush && b1BckgBrush && b2BckgBrush && b3BckgBrush && TxtBrush && HgltBrush && InactBrush && nrmFormat)
+        {
+            Draw->FillRectangle(D2D1::RectF(0, 0, scr_width, 50.0f), statusBckgBrush);
+            Draw->FillRoundedRectangle(D2D1::RoundedRect(b1Rect, 10.0f, 8.0f), b1BckgBrush);
+            Draw->FillRoundedRectangle(D2D1::RoundedRect(b2Rect, 10.0f, 8.0f), b2BckgBrush);
+            Draw->FillRoundedRectangle(D2D1::RoundedRect(b3Rect, 10.0f, 8.0f), b3BckgBrush);
+
+            if (name_set)Draw->DrawTextW(L"ИМЕ НА ГЕРОЙ", 13, nrmFormat, b1Txt1Rect, InactBrush);
+            else
+            {
+                if (b1Hglt)Draw->DrawTextW(L"ИМЕ НА ГЕРОЙ", 13, nrmFormat, b1Txt1Rect, HgltBrush);
+                else Draw->DrawTextW(L"ИМЕ НА ГЕРОЙ", 13, nrmFormat, b1Txt1Rect, TxtBrush);
+
+
+            }
+
+            if (b2Hglt)Draw->DrawTextW(L"ЗВУЦИ ON / OFF", 15, nrmFormat, b2Txt2Rect, HgltBrush);
+            else Draw->DrawTextW(L"ЗВУЦИ ON / OFF", 15, nrmFormat, b2Txt2Rect, TxtBrush);
+
+            if (b3Hglt)Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, HgltBrush);
+            else Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, TxtBrush);
+
+        }
+
+        --field_frame_delay;
+        if (field_frame_delay < 0)
+        {
+            field_frame_delay = 4;
+            ++field_frame;
+            if (field_frame > 17)field_frame = 0;
+        }
+
+        Draw->DrawBitmap(bmpField[field_frame], D2D1::RectF(0, 50, scr_width, scr_height));
+
+
+
+
+        ///////////////////////////
+
+        Draw->EndDraw();
+    }
 
     ReleaseResources();
     std::remove(tmp_file);
