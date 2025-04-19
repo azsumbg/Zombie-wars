@@ -48,47 +48,87 @@ namespace dll
 		int operator()(int min, int max);
 	};
 
-	template<typename T> class BASE_API BAG
+	template<typename T> class BAG
 	{
 	private:
 		T* m_ptr{ nullptr };
 		size_t m_size{ 0 };
 		size_t m_pos{ 0 };
 
-	public:
 		bool in_valid_state = false;
 
+	public:
+		
+		BAG() :m_size{ 1 }, m_ptr{ reinterpret_cast<T*>(calloc(1,sizeof(T))) } {};
 		BAG(size_t max_size) :m_size{ max_size }, m_ptr{ reinterpret_cast<T*>(calloc(max_size, sizeof(T))) } 
 		{
 			in_valid_state = true;
 		};
+		
 		~BAG()
 		{
 			if (m_ptr)free(m_ptr);
 		}
 
+		bool is_valid() const
+		{
+			return in_valid_state;
+		}
+
 		void push_back(T& element)
 		{
-			if (m_pos < m_size)
+			if (m_ptr)
 			{
-				*(m_ptr + m_pos) = element;
-				++m_pos;
-			}
-			else
-			{
-				T* temp_m_ptr = reinterpret_cast<T*>(calloc(m_size + 1, sizeof(T)));
-				for (size_t count = 0; count < m_size; ++count)*(temp_m_ptr + count) = *(m_ptr + count);
-				*(temp_m_ptr + m_size) = element;
-				++m_size;
-				++m_pos;
-				free(m_ptr);
-				m_ptr = temp_m_ptr;
+				if (m_pos < m_size)
+				{
+					*(m_ptr + m_pos) = element;
+					++m_pos;
+				}
+				else
+				{
+					T* temp_m_ptr = reinterpret_cast<T*>(calloc(m_size + 1, sizeof(T)));
+					for (size_t count = 0; count < m_size; ++count)*(temp_m_ptr + count) = *(m_ptr + count);
+					*(temp_m_ptr + m_size) = element;
+					++m_size;
+					++m_pos;
+					free(m_ptr);
+					m_ptr = temp_m_ptr;
+				}
+				if (!in_valid_state)in_valid_state = true;
 			}
 		}
+		void push_back(T&& element)
+		{
+			if (m_ptr)
+			{
+				if (m_pos < m_size)
+				{
+					*(m_ptr + m_pos) = element;
+					++m_pos;
+				}
+				else
+				{
+					T* temp_m_ptr = reinterpret_cast<T*>(calloc(m_size + 1, sizeof(T)));
+					for (size_t count = 0; count < m_size; ++count)*(temp_m_ptr + count) = *(m_ptr + count);
+					*(temp_m_ptr + m_size) = element;
+					++m_size;
+					++m_pos;
+					free(m_ptr);
+					m_ptr = temp_m_ptr;
+				}
+				if (!in_valid_state)in_valid_state = true;
+			}
+		}
+
 		void push_front(T& element)
 		{
 			*m_ptr = element;
 		}
+		void push_front(T&& element)
+		{
+			*m_ptr = element;
+		}
+		
 		T front() const
 		{
 			return *m_ptr;

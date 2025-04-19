@@ -218,8 +218,9 @@ void InitGame()
     level = 1;
     name_set = false;
 
+    /////////////////////////
 
-
+    
 }
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
