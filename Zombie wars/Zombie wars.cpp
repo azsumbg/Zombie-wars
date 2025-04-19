@@ -19,7 +19,6 @@
 #pragma comment(lib, "gifresizer.lib")
 #pragma comment(lib, "d2bmploader.lib")
 
-
 constexpr wchar_t bWinClassName[]{ L"AZombieGame" };
 
 constexpr char tmp_file[]{ ".\\res\\data\\temp.dat" };
@@ -135,6 +134,13 @@ ID2D1Bitmap* bmpZombie4[37]{ nullptr };
 
 //////////////////////////////////////////////
 
+dll::Creature Hero{ nullptr };
+float hero_mx{ 0 };
+float hero_my{ 0 };
+
+
+//////////////////////////////////////////////
+
 template<typename U>concept HasRelease = requires (U check)
 {
     check.Release();
@@ -220,6 +226,8 @@ void InitGame()
 
     /////////////////////////
 
+    ClearMem(&Hero);
+    Hero = dll::Factory(hero, (float)(RandMachine(10, 900)), ground - 80.0f);
     
 }
 
@@ -421,9 +429,30 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
         }
         break;
 
+    case WM_LBUTTONDOWN:
+        if (HIWORD(lParam) <= 50)
+        {
+            if (LOWORD(lParam) >= b1Rect.left && LOWORD(lParam) <= b1Rect.right)
+            {
+                if (name_set)
+                {
+                    if (sound)mciSendString(L"play .\\res\\snd\\negative.wav", NULL, NULL, NULL);
+                    break;
+                }
 
+                if (sound)mciSendString(L"play .\\res\\snd\\select.wav", NULL, NULL, NULL);
+                if (DialogBox(bIns, MAKEINTRESOURCE(IDD_PLAYER), hwnd, &DlgProc) == IDOK)name_set = true;
+                break;
+            }
 
-
+        }
+        else
+        {
+            hero_mx = (float)(LOWORD(lParam));
+            hero_my = (float)(HIWORD(lParam));
+            if (Hero)Hero->Move(hero_mx, hero_my, (float)(level));
+        }
+        break;
 
 
     default: return DefWindowProc(hwnd, ReceivedMsg, wParam, lParam);
@@ -860,7 +889,7 @@ void CreateResources()
         result = 0;
         PlaySound(L".\\res\\snd\\intro.wav", NULL, SND_ASYNC);
         
-        while (result < 300)
+        while (result < 250)
         {
             Draw->BeginDraw();
             Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
@@ -925,7 +954,32 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
         /////////////////////////////////////////////////////////////////
 
+        if (Hero)
+        {
+            if (Hero->in_battle)
+            {
+                if (RandMachine(0, 50) == 6)Hero->ChangeState(states::stand);
+                
+                if (Hero->GetState() == states::stand || Hero->GetState() == states::run)
+                {
+                    switch (RandMachine(0, 2))
+                    {
+                    case 0:
+                        Hero->ChangeState(states::punch);
+                        break;
 
+                    case 1:
+                        Hero->ChangeState(states::kick1);
+                        break;
+
+                    case 2:
+                        Hero->ChangeState(states::kick2);
+                        break;
+                    }
+                }
+            }
+            else if (Hero->GetState() == states::run) Hero->Move(hero_mx, hero_my, (float)(level));   
+        }
 
 
 
@@ -978,7 +1032,79 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         }
 
         Draw->DrawBitmap(bmpField[field_frame], D2D1::RectF(0, 50, scr_width, scr_height));
+        //////////////////////////////////////////////////////
 
+        if (Hero)
+        {
+            switch (Hero->GetState())
+            {
+            case states::stand:
+                if (Hero->dir == dirs::right || Hero->dir == dirs::stop)
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterStandR[aframe], Resizer(bmpFighterStandR[aframe], Hero->start.x, Hero->start.y));
+                }
+                else 
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterStandL[aframe], Resizer(bmpFighterStandL[aframe], Hero->start.x, Hero->start.y));
+                }
+                break;
+
+            case states::run:
+                if (Hero->dir == dirs::right || Hero->dir == dirs::stop)
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterStandR[aframe], Resizer(bmpFighterStandR[aframe], Hero->start.x, Hero->start.y));
+                }
+                else
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterStandL[aframe], Resizer(bmpFighterStandL[aframe], Hero->start.x, Hero->start.y));
+                }
+                break;
+
+            case states::kick1:
+                if (Hero->dir == dirs::right || Hero->dir == dirs::stop)
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterKick1R[aframe], Resizer(bmpFighterKick1R[aframe], Hero->start.x, Hero->start.y));
+                }
+                else
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterKick1L[aframe], Resizer(bmpFighterKick1L[aframe], Hero->start.x, Hero->start.y));
+                }
+                break;
+
+            case states::kick2:
+                if (Hero->dir == dirs::right || Hero->dir == dirs::stop)
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterKick2R[aframe], Resizer(bmpFighterKick2R[aframe], Hero->start.x, Hero->start.y));
+                }
+                else
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterKick2L[aframe], Resizer(bmpFighterKick2L[aframe], Hero->start.x, Hero->start.y));
+                }
+                break;
+
+            case states::punch:
+                if (Hero->dir == dirs::right || Hero->dir == dirs::stop)
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterPunchR[aframe], Resizer(bmpFighterPunchR[aframe], Hero->start.x, Hero->start.y));
+                }
+                else
+                {
+                    int aframe = Hero->GetFrame();
+                    Draw->DrawBitmap(bmpFighterPunchL[aframe], Resizer(bmpFighterPunchL[aframe], Hero->start.x, Hero->start.y));
+                }
+                break;
+
+            }
+        }
 
 
 
