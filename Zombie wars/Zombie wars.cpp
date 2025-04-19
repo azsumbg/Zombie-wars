@@ -159,7 +159,7 @@ void ReleaseResources()
     if (!ClearMem(&iFactory))LogError(L"Error releasing iFactory !");
     if (!ClearMem(&Draw))LogError(L"Error releasing Draw !");
     if (!ClearMem(&b1BckgBrush))LogError(L"Error releasing b1BckgBrush !");
-    if (!ClearMem(&b3BckgBrush))LogError(L"Error releasing b2BckgBrush !");
+    if (!ClearMem(&b2BckgBrush))LogError(L"Error releasing b2BckgBrush !");
     if (!ClearMem(&b3BckgBrush))LogError(L"Error releasing b3BckgBrush !");
     if (!ClearMem(&statusBckgBrush))LogError(L"Error releasing StatusBckgBrush !");
     if (!ClearMem(&TxtBrush))LogError(L"Error releasing TxtBrush !");
@@ -438,9 +438,9 @@ void CreateResources()
     if (result == FILE_EXIST)ErrExit(eStarted);
     else
     {
-        std::wofstream tmp(tmp_file);
-        tmp << L"Game started at: " << std::chrono::system_clock::now();
-        tmp.close();
+        std::wofstream mytmp(tmp_file);
+        mytmp << L"Game started at: " << std::chrono::system_clock::now();
+        mytmp.close();
     }
 
     int win_x = GetSystemMetrics(SM_CXSCREEN) / 2 - (int)(scr_width / 2);
