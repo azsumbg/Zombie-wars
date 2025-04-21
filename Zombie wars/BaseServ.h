@@ -26,6 +26,12 @@ constexpr unsigned char zombie3{ 8 };
 constexpr unsigned char zombie4{ 16 };
 constexpr unsigned char soul{ 32 };
 
+constexpr unsigned char tomb{ 1 };
+constexpr unsigned char house1{ 2 };
+constexpr unsigned char house2{ 4 };
+constexpr unsigned char house3{ 8 };
+constexpr unsigned char potion{ 16 };
+
 struct BASE_API FPOINT
 {
 	float x{ 0 };
@@ -168,6 +174,9 @@ namespace dll
 		FPOINT start{};
 		FPOINT end{};
 		FPOINT center{};
+
+		float x_radius{ 0 };
+		float y_radius{ 0 };
 
 		PROTON(float _x, float _y, float _width, float _height);
 		PROTON();

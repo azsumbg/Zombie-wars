@@ -138,6 +138,15 @@ dll::Creature Hero{ nullptr };
 float hero_mx{ 0 };
 float hero_my{ 0 };
 
+struct TOMBS
+{
+    unsigned char type;
+    dll::PROTON tomb;
+};
+std::vector<TOMBS> vTombs;
+
+std::vector<dll::Creature> vEvils;
+
 
 //////////////////////////////////////////////
 
@@ -229,6 +238,114 @@ void InitGame()
     ClearMem(&Hero);
     Hero = dll::Factory(hero, (float)(RandMachine(10, 900)), ground - 80.0f);
     
+    vTombs.clear();
+
+    while (vTombs.size() < 3)
+    {
+        switch (RandMachine(0, 3))
+        {
+        case 0:
+            {
+                TOMBS aTomb(tomb, dll::PROTON((float)(RandMachine(0, 900)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                    150.0f, 147.0f));
+
+                if (!vTombs.empty())
+                {
+                    bool is_ok = true;
+                    for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+                    {
+                        if (abs(aTomb.tomb.center.x - it->tomb.center.x) <= aTomb.tomb.x_radius + it->tomb.x_radius
+                            && abs(aTomb.tomb.center.y - it->tomb.center.y) <= aTomb.tomb.y_radius + it->tomb.y_radius)
+                        {
+                            is_ok = false;
+                            break;
+                        }
+                    }
+
+                    if (is_ok)vTombs.push_back(aTomb);
+                }
+                else vTombs.push_back(aTomb);
+            }
+            break;
+
+        case 1:
+        {
+            TOMBS aTomb(house1, dll::PROTON((float)(RandMachine(0, 900)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                189.0f, 200.0f));
+
+            if (!vTombs.empty())
+            {
+                bool is_ok = true;
+                for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+                {
+                    if (abs(aTomb.tomb.center.x - it->tomb.center.x) <= aTomb.tomb.x_radius + it->tomb.x_radius
+                        && abs(aTomb.tomb.center.y - it->tomb.center.y) <= aTomb.tomb.y_radius + it->tomb.y_radius)
+                    {
+                        is_ok = false;
+                        break;
+                    }
+                }
+
+                if (is_ok)vTombs.push_back(aTomb);
+            }
+            else vTombs.push_back(aTomb);
+        }
+        break;
+        
+        case 2:
+        {
+            TOMBS aTomb(house2, dll::PROTON((float)(RandMachine(0, 900)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                182.0f, 180.0f));
+
+            if (!vTombs.empty())
+            {
+                bool is_ok = true;
+                for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+                {
+                    if (abs(aTomb.tomb.center.x - it->tomb.center.x) <= aTomb.tomb.x_radius + it->tomb.x_radius
+                        && abs(aTomb.tomb.center.y - it->tomb.center.y) <= aTomb.tomb.y_radius + it->tomb.y_radius)
+                    {
+                        is_ok = false;
+                        break;
+                    }
+                }
+
+                if (is_ok)vTombs.push_back(aTomb);
+            }
+            else vTombs.push_back(aTomb);
+        }
+        break;
+
+        case 3:
+        {
+            TOMBS aTomb(house3, dll::PROTON((float)(RandMachine(0, 900)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                186.0f, 180.0f));
+
+            if (!vTombs.empty())
+            {
+                bool is_ok = true;
+                for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+                {
+                    if (abs(aTomb.tomb.center.x - it->tomb.center.x) <= aTomb.tomb.x_radius + it->tomb.x_radius
+                        && abs(aTomb.tomb.center.y - it->tomb.center.y) <= aTomb.tomb.y_radius + it->tomb.y_radius)
+                    {
+                        is_ok = false;
+                        break;
+                    }
+                }
+
+                if (is_ok)vTombs.push_back(aTomb);
+            }
+            else vTombs.push_back(aTomb);
+        }
+        break;
+        }
+    }
+
+    if (!vEvils.empty())
+        for (int i = 0; i < vEvils.max_size(); ++i)ClearMem(&vEvils[i]);
+    vEvils.clear();
+
 }
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
@@ -981,7 +1098,40 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             else if (Hero->GetState() == states::run) Hero->Move(hero_mx, hero_my, (float)(level));   
         }
 
+        if (vEvils.size() < level + 4 && !vTombs.empty() && RandMachine(0, 300) == 66)
+        {
+            switch (RandMachine(0, 3))
+            {
+            case 0:
+                {
+                    int which_tomb = RandMachine(0, (int)(vTombs.size() - 1));
+                    vEvils.push_back(dll::Factory(zombie1, vTombs[which_tomb].tomb.center.x, vTombs[which_tomb].tomb.center.y));
+                }
+                break;
 
+            case 1:
+            {
+                int which_tomb = RandMachine(0, (int)(vTombs.size() - 1));
+                vEvils.push_back(dll::Factory(zombie2, vTombs[which_tomb].tomb.center.x, vTombs[which_tomb].tomb.center.y));
+            }
+            break;
+
+            case 2:
+            {
+                int which_tomb = RandMachine(0, (int)(vTombs.size() - 1));
+                vEvils.push_back(dll::Factory(zombie3, vTombs[which_tomb].tomb.center.x, vTombs[which_tomb].tomb.center.y));
+            }
+            break;
+
+            case 3:
+            {
+                int which_tomb = RandMachine(0, (int)(vTombs.size() - 1));
+                vEvils.push_back(dll::Factory(zombie4, vTombs[which_tomb].tomb.center.x, vTombs[which_tomb].tomb.center.y));
+            }
+            break;
+
+            }
+        }
 
 
 
@@ -1106,6 +1256,67 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             }
         }
 
+        if (!vTombs.empty())
+        {
+            for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+            {
+                switch (it->type)
+                {
+                case tomb:
+                    Draw->DrawBitmap(bmpTomb, D2D1::RectF(it->tomb.start.x, it->tomb.start.y, it->tomb.end.x, it->tomb.end.y));
+                    break;
+
+                case house1:
+                    Draw->DrawBitmap(bmpHouse1, D2D1::RectF(it->tomb.start.x, it->tomb.start.y, it->tomb.end.x, it->tomb.end.y));
+                    break;
+
+                case house2:
+                    Draw->DrawBitmap(bmpHouse2, D2D1::RectF(it->tomb.start.x, it->tomb.start.y, it->tomb.end.x, it->tomb.end.y));
+                    break;
+
+                case house3:
+                    Draw->DrawBitmap(bmpHouse3, D2D1::RectF(it->tomb.start.x, it->tomb.start.y, it->tomb.end.x, it->tomb.end.y));
+                    break;
+                }
+            }
+        }
+
+        if (!vEvils.empty())
+        {
+            for (std::vector<dll::Creature>::iterator it = vEvils.begin(); it < vEvils.end(); ++it)
+            {
+                switch ((*it)->type)
+                {
+                case zombie1:
+                    {
+                        int aframe = (*it)->GetFrame();
+                        Draw->DrawBitmap(bmpZombie1[aframe], Resizer(bmpZombie1[aframe], (*it)->start.x, (*it)->start.y));
+                    }
+                    break;
+
+                case zombie2:
+                {
+                    int aframe = (*it)->GetFrame();
+                    Draw->DrawBitmap(bmpZombie2[aframe], Resizer(bmpZombie2[aframe], (*it)->start.x, (*it)->start.y));
+                }
+                break;
+
+                case zombie3:
+                {
+                    int aframe = (*it)->GetFrame();
+                    Draw->DrawBitmap(bmpZombie3[aframe], Resizer(bmpZombie3[aframe], (*it)->start.x, (*it)->start.y));
+                }
+                break;
+
+                case zombie4:
+                {
+                    int aframe = (*it)->GetFrame();
+                    Draw->DrawBitmap(bmpZombie4[aframe], Resizer(bmpZombie4[aframe], (*it)->start.x, (*it)->start.y));
+                }
+                break;
+                }
+            }
+        }
 
 
         ///////////////////////////
