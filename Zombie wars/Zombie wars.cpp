@@ -146,7 +146,7 @@ struct TOMBS
 std::vector<TOMBS> vTombs;
 
 std::vector<dll::Creature> vEvils;
-
+std::vector<dll::Creature> vSouls;
 
 //////////////////////////////////////////////
 
@@ -236,7 +236,7 @@ void InitGame()
     /////////////////////////
 
     ClearMem(&Hero);
-    Hero = dll::Factory(hero, (float)(RandMachine(10, 900)), ground - 80.0f);
+    Hero = dll::Factory(hero, (float)(RandMachine(10, 800)), ground - 80.0f);
     
     vTombs.clear();
 
@@ -246,7 +246,7 @@ void InitGame()
         {
         case 0:
             {
-                TOMBS aTomb(tomb, dll::PROTON((float)(RandMachine(0, 900)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                TOMBS aTomb(tomb, dll::PROTON((float)(RandMachine(0, 800)), (float)(RandMachine((int)(up_ground_boundary), 500)),
                     150.0f, 147.0f));
 
                 if (!vTombs.empty())
@@ -270,7 +270,7 @@ void InitGame()
 
         case 1:
         {
-            TOMBS aTomb(house1, dll::PROTON((float)(RandMachine(0, 900)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+            TOMBS aTomb(house1, dll::PROTON((float)(RandMachine(0, 800)), (float)(RandMachine((int)(up_ground_boundary), 500)),
                 189.0f, 200.0f));
 
             if (!vTombs.empty())
@@ -294,7 +294,7 @@ void InitGame()
         
         case 2:
         {
-            TOMBS aTomb(house2, dll::PROTON((float)(RandMachine(0, 900)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+            TOMBS aTomb(house2, dll::PROTON((float)(RandMachine(0, 800)), (float)(RandMachine((int)(up_ground_boundary), 500)),
                 182.0f, 180.0f));
 
             if (!vTombs.empty())
@@ -318,7 +318,7 @@ void InitGame()
 
         case 3:
         {
-            TOMBS aTomb(house3, dll::PROTON((float)(RandMachine(0, 900)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+            TOMBS aTomb(house3, dll::PROTON((float)(RandMachine(0, 800)), (float)(RandMachine((int)(up_ground_boundary), 500)),
                 186.0f, 180.0f));
 
             if (!vTombs.empty())
@@ -343,8 +343,12 @@ void InitGame()
     }
 
     if (!vEvils.empty())
-        for (int i = 0; i < vEvils.max_size(); ++i)ClearMem(&vEvils[i]);
+        for (int i = 0; i < vEvils.size(); ++i)ClearMem(&vEvils[i]);
     vEvils.clear();
+
+    if (!vSouls.empty())
+        for (int i = 0; i < vSouls.size(); ++i)ClearMem(&vSouls[i]);
+    vSouls.clear();
 
 }
 
@@ -1133,8 +1137,25 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             }
         }
 
+        if (vSouls.size() < 3 + level && RandMachine(0, 400) == 33)
+            vSouls.push_back(dll::Factory(soul, (float)(RandMachine(0, 800)), 
+                (float)(RandMachine((int)(up_ground_boundary), 600))));
 
+        if (!vEvils.empty() && Hero)
+        {
+            for (std::vector<dll::Creature>::iterator evil = vEvils.begin(); evil < vEvils.end(); ++evil)
+            {
+                dll::BAG<FPOINT> targets(vSouls.size() + 1);
 
+                targets.push_back(Hero->center);
+
+                if (!vSouls.empty())
+                    for (std::vector<dll::Creature>::iterator soul = vSouls.begin(); soul < vSouls.end(); ++soul)
+                        targets.push_back((*soul)->center);
+
+                (*evil)->NextMove(targets, (float)(level));
+            }
+        }
 
 
 
@@ -1315,6 +1336,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 }
                 break;
                 }
+            }
+        }
+
+        if (!vSouls.empty())
+        {
+            for (std::vector<dll::Creature>::iterator it = vSouls.begin(); it < vSouls.end(); ++it)
+            {
+                int aframe = (*it)->GetFrame();
+                Draw->DrawBitmap(bmpSoul[aframe], Resizer(bmpSoul[aframe], (*it)->start.x, (*it)->start.y));
             }
         }
 

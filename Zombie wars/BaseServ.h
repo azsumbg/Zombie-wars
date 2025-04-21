@@ -236,7 +236,7 @@ namespace dll
 		void ChangeState(states _to_what);
 		states GetState() const;
 
-		virtual void NextMove(BAG<FPOINT> _targets, float gear) = 0;
+		virtual void NextMove(BAG<FPOINT>& _targets, float gear) = 0;
 		virtual bool Move(float _where_x, float _where_y, float gear) = 0;
 		virtual void Release() = 0;
 	};
@@ -251,7 +251,7 @@ namespace dll
 
 	public:
 
-		void NextMove(BAG<FPOINT> _targets, float gear) override;
+		void NextMove(BAG<FPOINT>& _targets, float gear) override;
 		bool Move(float _where_x, float _where_y, float gear) override;
 		virtual void Release() override;
 
@@ -266,7 +266,7 @@ namespace dll
 
 	public:
 
-		void NextMove(BAG<FPOINT> _targets, float gear) override;
+		void NextMove(BAG<FPOINT>& _targets, float gear) override;
 		bool Move(float _where_x, float _where_y, float gear) override;
 		virtual void Release() override;
 
