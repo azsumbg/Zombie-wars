@@ -389,7 +389,7 @@ void LevelUp()
                 else break;
             }
 
-            Draw->DrawTextW(txt, txt_size, bigFormat, D2D1::RectF(400.0f, 350.0f, scr_width, scr_height), HgltBrush);
+            Draw->DrawTextW(txt, txt_size, bigFormat, D2D1::RectF(300.0f, 350.0f, scr_width, scr_height), HgltBrush);
 
             Draw->EndDraw();
             if (sound)mciSendString(L"play .\\res\\snd\\click.wav", NULL, NULL, NULL);
@@ -401,6 +401,7 @@ void LevelUp()
 
     if (HgltBrush && bigFormat)
     {
+        Draw->BeginDraw();
         Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
         --intro_frame_delay;
         if (intro_frame_delay < 0)
@@ -533,6 +534,8 @@ void LevelUp()
     vSouls.clear();
 
     vPotions.clear();
+
+    level++;
 
     if (sound)
     {
@@ -1184,7 +1187,7 @@ void CreateResources()
                 hr = iWriteFactory->CreateTextFormat(L"SEGOE SCRIPT", NULL, DWRITE_FONT_WEIGHT_EXTRA_BLACK, DWRITE_FONT_STYLE_OBLIQUE,
                     DWRITE_FONT_STRETCH_NORMAL, 16.0f, L"", &nrmFormat);
                 hr = iWriteFactory->CreateTextFormat(L"SEGOE SCRIPT", NULL, DWRITE_FONT_WEIGHT_EXTRA_BLACK, DWRITE_FONT_STYLE_OBLIQUE,
-                    DWRITE_FONT_STRETCH_NORMAL, 28.0f, L"", &midFormat);
+                    DWRITE_FONT_STRETCH_NORMAL, 24.0f, L"", &midFormat);
                 hr = iWriteFactory->CreateTextFormat(L"SEGOE SCRIPT", NULL, DWRITE_FONT_WEIGHT_EXTRA_BLACK, DWRITE_FONT_STYLE_OBLIQUE,
                     DWRITE_FONT_STRETCH_NORMAL, 72.0f, L"", &bigFormat);
                 if (hr != S_OK)
@@ -1671,6 +1674,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             wcscat_s(txt, L", изгубени души: ");
             wsprintf(add, L"%d", killed_souls);
             wcscat_s(txt, add);
+            wcscat_s(txt, L", ниво: ");
+            wsprintf(add, L"%d", level);
+            wcscat_s(txt, add);
 
             for (int i = 0; i < 150; ++i)
             {
@@ -1687,8 +1693,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         
         /////////////////////////////
 
-        if (saved_souls > 10 + level)LevelUp();
-        if (killed_souls > 10 + level)GameOver();
+        if (saved_souls > 5 + level)LevelUp();
+        if (killed_souls > 5 + level)GameOver();
     }
 
     ReleaseResources();
