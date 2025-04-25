@@ -65,6 +65,10 @@ bool b2Hglt{ false };
 bool b3Hglt{ false };
 bool name_set = false;
 
+bool hero_killed = false;
+float RIP_X = 0;
+float RIP_Y = 0;
+
 wchar_t current_player[16]{ L"ONE WARRIOR" };
 
 D2D1_RECT_F b1Rect{ 20.0f, 0, scr_width / 3 - 50.0f, 50.0f };
@@ -83,6 +87,9 @@ int intro_frame_delay = 8;
 
 int field_frame = 0;
 int field_frame_delay = 4;
+
+int saved_souls = 0;
+int killed_souls = 0;
 
 // ********************************************
 
@@ -148,6 +155,8 @@ std::vector<TOMBS> vTombs;
 std::vector<dll::Creature> vEvils;
 std::vector<dll::Creature> vSouls;
 
+std::vector<dll::PROTON> vPotions;
+
 //////////////////////////////////////////////
 
 template<typename U>concept HasRelease = requires (U check)
@@ -159,6 +168,7 @@ template<HasRelease T> bool ClearMem(T** var)
     if (*var)
     {
         (*var)->Release();
+        (*var) = nullptr;
         return true;
     }
     return false;
@@ -234,6 +244,9 @@ void InitGame()
     name_set = false;
 
     /////////////////////////
+
+    saved_souls = 0;
+    killed_souls = 0;
 
     ClearMem(&Hero);
     Hero = dll::Factory(hero, (float)(RandMachine(10, 800)), ground - 80.0f);
@@ -350,6 +363,184 @@ void InitGame()
         for (int i = 0; i < vSouls.size(); ++i)ClearMem(&vSouls[i]);
     vSouls.clear();
 
+    vPotions.clear();
+}
+void LevelUp()
+{
+    int bonus = 0;
+
+    if (HgltBrush && bigFormat && saved_souls > 0)
+    {
+        while (bonus <= saved_souls * level)
+        {
+            Draw->BeginDraw();
+            Draw->DrawBitmap(bmpIntro[0], D2D1::RectF(0, 0, scr_width, scr_height));
+
+            wchar_t txt[50] = L"БОНУС: ";
+            wchar_t add[5] = L"\0";
+            int txt_size = 0;
+
+            wsprintf(add, L"%d", bonus);
+            wcscat_s(txt, add);
+
+            for (int i = 0; i < 50; ++i)
+            {
+                if (txt[i] != '\0')txt_size++;
+                else break;
+            }
+
+            Draw->DrawTextW(txt, txt_size, bigFormat, D2D1::RectF(400.0f, 350.0f, scr_width, scr_height), HgltBrush);
+
+            Draw->EndDraw();
+            if (sound)mciSendString(L"play .\\res\\snd\\click.wav", NULL, NULL, NULL);
+            Sleep(80);
+
+            bonus++;
+        }
+    }
+
+    if (HgltBrush && bigFormat)
+    {
+        Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+        --intro_frame_delay;
+        if (intro_frame_delay < 0)
+        {
+            intro_frame_delay = 8;
+            ++intro_frame;
+            if (intro_frame > 9)intro_frame = 0;
+        }
+        Draw->DrawText(L"НИВОТО ИЗЧИСТЕНО !", 19, bigFormat, D2D1::RectF(100.0f, scr_height / 2 - 50.0f,
+            scr_width, scr_height), TxtBrush);
+        Draw->EndDraw();
+    }
+
+    saved_souls = 0;
+    killed_souls = 0;
+
+    ClearMem(&Hero);
+    Hero = dll::Factory(hero, (float)(RandMachine(10, 800)), ground - 80.0f);
+
+    vTombs.clear();
+
+    while (vTombs.size() < 3)
+    {
+        switch (RandMachine(0, 3))
+        {
+        case 0:
+        {
+            TOMBS aTomb(tomb, dll::PROTON((float)(RandMachine(0, 800)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                150.0f, 147.0f));
+
+            if (!vTombs.empty())
+            {
+                bool is_ok = true;
+                for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+                {
+                    if (abs(aTomb.tomb.center.x - it->tomb.center.x) <= aTomb.tomb.x_radius + it->tomb.x_radius
+                        && abs(aTomb.tomb.center.y - it->tomb.center.y) <= aTomb.tomb.y_radius + it->tomb.y_radius)
+                    {
+                        is_ok = false;
+                        break;
+                    }
+                }
+
+                if (is_ok)vTombs.push_back(aTomb);
+            }
+            else vTombs.push_back(aTomb);
+        }
+        break;
+
+        case 1:
+        {
+            TOMBS aTomb(house1, dll::PROTON((float)(RandMachine(0, 800)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                189.0f, 200.0f));
+
+            if (!vTombs.empty())
+            {
+                bool is_ok = true;
+                for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+                {
+                    if (abs(aTomb.tomb.center.x - it->tomb.center.x) <= aTomb.tomb.x_radius + it->tomb.x_radius
+                        && abs(aTomb.tomb.center.y - it->tomb.center.y) <= aTomb.tomb.y_radius + it->tomb.y_radius)
+                    {
+                        is_ok = false;
+                        break;
+                    }
+                }
+
+                if (is_ok)vTombs.push_back(aTomb);
+            }
+            else vTombs.push_back(aTomb);
+        }
+        break;
+
+        case 2:
+        {
+            TOMBS aTomb(house2, dll::PROTON((float)(RandMachine(0, 800)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                182.0f, 180.0f));
+
+            if (!vTombs.empty())
+            {
+                bool is_ok = true;
+                for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+                {
+                    if (abs(aTomb.tomb.center.x - it->tomb.center.x) <= aTomb.tomb.x_radius + it->tomb.x_radius
+                        && abs(aTomb.tomb.center.y - it->tomb.center.y) <= aTomb.tomb.y_radius + it->tomb.y_radius)
+                    {
+                        is_ok = false;
+                        break;
+                    }
+                }
+
+                if (is_ok)vTombs.push_back(aTomb);
+            }
+            else vTombs.push_back(aTomb);
+        }
+        break;
+
+        case 3:
+        {
+            TOMBS aTomb(house3, dll::PROTON((float)(RandMachine(0, 800)), (float)(RandMachine((int)(up_ground_boundary), 500)),
+                186.0f, 180.0f));
+
+            if (!vTombs.empty())
+            {
+                bool is_ok = true;
+                for (std::vector<TOMBS>::iterator it = vTombs.begin(); it < vTombs.end(); ++it)
+                {
+                    if (abs(aTomb.tomb.center.x - it->tomb.center.x) <= aTomb.tomb.x_radius + it->tomb.x_radius
+                        && abs(aTomb.tomb.center.y - it->tomb.center.y) <= aTomb.tomb.y_radius + it->tomb.y_radius)
+                    {
+                        is_ok = false;
+                        break;
+                    }
+                }
+
+                if (is_ok)vTombs.push_back(aTomb);
+            }
+            else vTombs.push_back(aTomb);
+        }
+        break;
+        }
+    }
+
+    if (!vEvils.empty())
+        for (int i = 0; i < vEvils.size(); ++i)ClearMem(&vEvils[i]);
+    vEvils.clear();
+
+    if (!vSouls.empty())
+        for (int i = 0; i < vSouls.size(); ++i)ClearMem(&vSouls[i]);
+    vSouls.clear();
+
+    vPotions.clear();
+
+    if (sound)
+    {
+        PlaySound(NULL, NULL, NULL);
+        PlaySound(L".\\res\\snd\\levelup.wav", NULL, SND_SYNC);
+        PlaySound(sound_file, NULL, SND_ASYNC | SND_LOOP);
+    }
+    else Sleep(3000);
 }
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
@@ -540,7 +731,8 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
                 pause = false;
                 break;
             }
-            GameOver();
+            saved_souls = 0;
+            LevelUp();
             break;
 
         case mExit:
@@ -1102,7 +1294,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             else if (Hero->GetState() == states::run) Hero->Move(hero_mx, hero_my, (float)(level));   
         }
 
-        if (vEvils.size() < level + 4 && !vTombs.empty() && RandMachine(0, 300) == 66)
+        if (vEvils.size() < level + 2 && !vTombs.empty() && RandMachine(0, 300) == 66)
         {
             switch (RandMachine(0, 3))
             {
@@ -1138,7 +1330,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         }
 
         if (vSouls.size() < 3 + level && RandMachine(0, 400) == 33)
-            vSouls.push_back(dll::Factory(soul, (float)(RandMachine(0, 800)), 
+            vSouls.push_back(dll::Factory(soul, (float)(RandMachine(50, 800)), 
                 (float)(RandMachine((int)(up_ground_boundary), 600))));
 
         if (!vEvils.empty() && Hero)
@@ -1157,14 +1349,98 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             }
         }
 
+        if (!vEvils.empty() && !vSouls.empty())
+        {
+            for (std::vector<dll::Creature>::iterator evil = vEvils.begin(); evil < vEvils.end(); ++evil)
+            {
+                bool killed = false;
 
+                for (std::vector<dll::Creature>::iterator soul = vSouls.begin(); soul < vSouls.end(); ++soul)
+                {
+                    if (!((*evil)->start.x >= (*soul)->end.x || (*evil)->end.x <= (*soul)->start.x
+                        || (*evil)->start.y >= (*soul)->end.y || (*evil)->end.y <= (*soul)->start.y))
+                    {
+                        (*soul)->Release();
+                        vSouls.erase(soul);
+                        killed = true;
+                        ++killed_souls;
+                        if (sound)mciSendString(L"play .\\res\\snd\\soulkilled.wav", NULL, NULL, NULL);
+                        break;
+                    }
+                }
+                if (killed)break;
+            }
+        }
 
+        if (Hero && !vSouls.empty())
+        {
+            for (std::vector<dll::Creature>::iterator soul = vSouls.begin(); soul < vSouls.end(); ++soul)
+            {
+                if (!(Hero->start.x >= (*soul)->end.x || Hero->end.x <= (*soul)->start.x
+                    || Hero->start.y >= (*soul)->end.y || Hero->end.y <= (*soul)->start.y))
+                {
+                    (*soul)->Release();
+                    vSouls.erase(soul);
+                    ++saved_souls;
+                    if (Hero->lifes + 10 <= 100)Hero->lifes += 10;
+                    if (sound)mciSendString(L"play .\\res\\snd\\soulkilled.wav", NULL, NULL, NULL);
+                    break;
+                }
+            }
+        }
 
+        if(Hero)Hero->in_battle = false;
+        
+        if (Hero && !vEvils.empty())
+        {
+            for (std::vector<dll::Creature>::iterator evil = vEvils.begin(); evil < vEvils.end(); ++evil)
+            {
+                if (!(Hero->start.x >= (*evil)->end.x || Hero->end.x <= (*evil)->start.x
+                    || Hero->start.y >= (*evil)->end.y || Hero->end.y <= (*evil)->start.y))
+                {
+                    Hero->in_battle = true;
 
+                    (*evil)->lifes -= Hero->Attack();
+                    if ((*evil)->lifes <= 0)
+                    {
+                        if (RandMachine(0, 3) == 2)
+                            vPotions.push_back(dll::PROTON((*evil)->center.x, (*evil)->center.y, 22.0f, 26.0f));
+                        (*evil)->Release();
+                        vEvils.erase(evil);
+                        score += level;
+                        Hero->in_battle = false;
+                        if (sound)mciSendString(L"play .\\res\\snd\\evilkilled.wav", NULL, NULL, NULL);
+                        break;
+                    }
 
+                    Hero->lifes -= (*evil)->Attack();
+                    if (Hero->lifes <= 0)
+                    {
+                        hero_killed = true;
+                        RIP_X = Hero->center.x;
+                        RIP_Y = Hero->center.y;
+                        ClearMem(&Hero);
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
 
-
-
+        if (Hero && !vPotions.empty())
+        {
+            for (std::vector<dll::PROTON>::iterator pot = vPotions.begin(); pot < vPotions.end(); ++pot)
+            {
+                if (!(Hero->start.x >= pot->end.x || Hero->end.x <= pot->start.x
+                    || Hero->start.y >= pot->end.y || Hero->end.y <= pot->start.y))
+                {
+                    if (sound)mciSendString(L"play .\\res\\snd\\life.wav", NULL, NULL, NULL);
+                    Hero->lifes = 100;
+                    vPotions.erase(pot);
+                    break;
+                }
+            }
+        }
 
         // DRAW THINGS ***************************************
 
@@ -1275,6 +1551,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 break;
 
             }
+
+            Draw->DrawLine(D2D1::Point2F(Hero->start.x, Hero->end.y), D2D1::Point2F(Hero->start.x + (float)(Hero->lifes - 20),
+                Hero->end.y), HgltBrush, 10.0f);
+        }
+
+        if (hero_killed)
+        {
+            Draw->DrawBitmap(bmpRip, D2D1::RectF(RIP_X, RIP_Y, RIP_X + 80.0f, RIP_Y + 94.0f));
+            if (sound)
+            {
+                PlaySound(NULL, NULL, NULL);
+                Draw->EndDraw();
+                PlaySound(L".\\res\\snd\\killed.wav", NULL, SND_SYNC);
+                GameOver();
+            }
+            else
+            {
+                Draw->EndDraw();
+                Sleep(2000);
+                GameOver();
+            }
         }
 
         if (!vTombs.empty())
@@ -1336,6 +1633,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 }
                 break;
                 }
+
+                Draw->DrawLine(D2D1::Point2F((*it)->start.x, (*it)->end.y), D2D1::Point2F((*it)->start.x + (float)((*it)->lifes / 3),
+                    (*it)->end.y), TxtBrush, 10.0f);
             }
         }
 
@@ -1348,10 +1648,47 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             }
         }
 
+        if (!vPotions.empty())
+        {
+            for (int i = 0; i < vPotions.size(); ++i)
+                Draw->DrawBitmap(bmpPotion, D2D1::RectF(vPotions[i].start.x, vPotions[i].start.y,
+                    vPotions[i].end.x, vPotions[i].end.y));
+        }
+
+
+        // STATUS ********************
+
+        if (midFormat && HgltBrush)
+        {
+            wchar_t txt[150] = L"герой: ";
+            wchar_t add[5] = L"\0";
+            int txt_size = 0;
+
+            wcscat_s(txt, current_player);
+            wcscat_s(txt, L", спасени души: ");
+            wsprintf(add, L"%d", saved_souls);
+            wcscat_s(txt, add);
+            wcscat_s(txt, L", изгубени души: ");
+            wsprintf(add, L"%d", killed_souls);
+            wcscat_s(txt, add);
+
+            for (int i = 0; i < 150; ++i)
+            {
+                if (txt[i] != '\0')txt_size++;
+                else break;
+            }
+
+            Draw->DrawTextW(txt, txt_size, midFormat, D2D1::RectF(10.0f, ground + 5.0f, scr_width, scr_height), HgltBrush);
+        }
 
         ///////////////////////////
 
         Draw->EndDraw();
+        
+        /////////////////////////////
+
+        if (saved_souls > 10 + level)LevelUp();
+        if (killed_souls > 10 + level)GameOver();
     }
 
     ReleaseResources();
