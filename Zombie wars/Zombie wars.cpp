@@ -36,8 +36,8 @@ constexpr int mLoad{ 1005 };
 constexpr int mHoF{ 1006 };
 
 constexpr int record{ 2001 };
-constexpr int no_record{ 2001 };
-constexpr int first_record{ 2001 };
+constexpr int no_record{ 2002 };
+constexpr int first_record{ 2003 };
 
 WNDCLASS bWinClass{};
 HINSTANCE bIns{ nullptr };
@@ -271,6 +271,14 @@ void GameOver()
         if (HgltBrush && bigFormat)
         {
             Draw->BeginDraw();
+            Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+            --intro_frame_delay;
+            if (intro_frame_delay < 0)
+            {
+                intro_frame_delay = 8;
+                ++intro_frame;
+                if (intro_frame > 9)intro_frame = 0;
+            }
             Draw->DrawTextW(L"ЗОМБИТАТА ПОБЕДИХА !", 21, bigFormat, D2D1::RectF(20.0f, 300.0f, scr_width, scr_height), HgltBrush);
             Draw->EndDraw();
             if (sound)PlaySound(L".\\res\\snd\\loose.wav", NULL, SND_SYNC);
@@ -283,6 +291,14 @@ void GameOver()
         if (HgltBrush && bigFormat)
         {
             Draw->BeginDraw();
+            Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+            --intro_frame_delay;
+            if (intro_frame_delay < 0)
+            {
+                intro_frame_delay = 8;
+                ++intro_frame;
+                if (intro_frame > 9)intro_frame = 0;
+            }
             Draw->DrawTextW(L"ПЪРВИ РЕКОРД НА ИГРАТА !", 25, bigFormat, D2D1::RectF(20.0f, 300.0f, scr_width, scr_height), HgltBrush);
             Draw->EndDraw();
             if (sound)PlaySound(L".\\res\\snd\\record.wav", NULL, SND_SYNC);
@@ -295,6 +311,14 @@ void GameOver()
         if (HgltBrush && bigFormat)
         {
             Draw->BeginDraw();
+            Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+            --intro_frame_delay;
+            if (intro_frame_delay < 0)
+            {
+                intro_frame_delay = 8;
+                ++intro_frame;
+                if (intro_frame > 9)intro_frame = 0;
+            }
             Draw->DrawTextW(L"СВЕТОВЕН РЕКОРД НА ИГРАТА !", 28, bigFormat, D2D1::RectF(5.0f, 300.0f, scr_width, scr_height), HgltBrush);
             Draw->EndDraw();
             if (sound)PlaySound(L".\\res\\snd\\record.wav", NULL, SND_SYNC);
@@ -445,8 +469,14 @@ void LevelUp()
         while (bonus <= saved_souls * level)
         {
             Draw->BeginDraw();
-            Draw->DrawBitmap(bmpIntro[0], D2D1::RectF(0, 0, scr_width, scr_height));
-
+            Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+            --intro_frame_delay;
+            if (intro_frame_delay < 0)
+            {
+                intro_frame_delay = 8;
+                ++intro_frame;
+                if (intro_frame > 9)intro_frame = 0;
+            }
             wchar_t txt[50] = L"БОНУС: ";
             wchar_t add[5] = L"\0";
             int txt_size = 0;
@@ -615,6 +645,67 @@ void LevelUp()
         PlaySound(sound_file, NULL, SND_ASYNC | SND_LOOP);
     }
     else Sleep(3000);
+}
+void HallOfFame()
+{
+    int result{ 0 };
+    CheckFile(record_file, &result);
+    if (result == FILE_NOT_EXIST)
+    {
+        if (sound)mciSendString(L"play .\\res\\snd\\negative.wav", NULL, NULL, NULL);
+        MessageBox(bHwnd, L"Все още липсва рекорд на играта !\n\nПостарай се повече !", L"Липсва файл !",
+            MB_OK | MB_APPLMODAL | MB_ICONEXCLAMATION);
+        return;
+    }
+
+    wchar_t hof_txt[150]{ L"НАЙ-ВЕЛИК ГЕРОЙ: " };
+    wchar_t saved_player[16] = L"\0";
+    wchar_t add[5] = L"\0";
+
+    std::wifstream check(record_file);
+
+    check >> result;
+    for (int i = 0; i < 16; ++i)
+    {
+        int letter = 0;
+        check >> letter;
+        saved_player[i] = static_cast<wchar_t>(letter);
+    }
+
+    check.close();
+
+    wsprintf(add, L"%d", result);
+    wcscat_s(hof_txt, saved_player);
+    wcscat_s(hof_txt, L"\n\nСВЕТОВЕН РЕКОРД: ");
+    wcscat_s(hof_txt, add);
+
+    result = 0;
+
+    for (int i = 0; i < 150; ++i)
+    {
+        if (hof_txt[i] != '\0')++result;
+        else break;
+    }
+
+    if (sound)mciSendString(L"play .\\res\\snd\\showrec.wav", NULL, NULL, NULL);
+
+    if (HgltBrush && bigFormat)
+    {
+        Draw->BeginDraw();
+        Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+        --intro_frame_delay;
+        if (intro_frame_delay < 0)
+        {
+            intro_frame_delay = 8;
+            ++intro_frame;
+            if (intro_frame > 9)intro_frame = 0;
+        }
+        Draw->DrawText(hof_txt, result, bigFormat, D2D1::RectF(10.0f, 200.0f,
+            scr_width, scr_height), TxtBrush);
+        Draw->EndDraw();
+    }
+
+    Sleep(3500);
 }
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
@@ -813,6 +904,13 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
             SendMessage(hwnd, WM_CLOSE, NULL, NULL);
             break;
 
+
+
+        case mHoF:
+            pause = true;
+            HallOfFame();
+            pause = false;
+            break;
         }
         break;
 
