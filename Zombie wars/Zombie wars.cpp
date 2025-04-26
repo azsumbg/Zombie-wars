@@ -707,6 +707,232 @@ void HallOfFame()
 
     Sleep(3500);
 }
+void SaveGame()
+{
+    int result{ 0 };
+    CheckFile(save_file, &result);
+    if (result == FILE_EXIST)
+    {
+        if (sound)mciSendString(L"play .\\res\\snd\\exclamation.wav", NULL, NULL, NULL);
+        if (MessageBox(bHwnd, L"Има предишна записана игра, която ще бъде загубена !\n\nНаистина ли я презаписваш ?",
+            L"Презапис", MB_YESNO | MB_APPLMODAL | MB_ICONQUESTION) == IDNO)return;
+    }
+
+    std::wofstream save(save_file);
+
+    save << hero_killed << std::endl;
+    save << score << std::endl;
+    save << level << std::endl;
+
+    save << saved_souls << std::endl;
+    save << killed_souls << std::endl;
+
+    for (int i = 0; i < 16; ++i)save << static_cast<int>(current_player[i]) << std::endl;
+    save << name_set << std::endl;
+
+    save << Hero->start.x << std::endl;
+    save << Hero->start.y << std::endl;
+    save << Hero->lifes << std::endl;
+
+    save << vTombs.size() << std::endl;
+    if (!vTombs.empty())
+    {
+        for (int i = 0; i < vTombs.size(); ++i)
+        {
+            save << vTombs[i].type << std::endl;
+            save << vTombs[i].tomb.start.x << std::endl;
+            save << vTombs[i].tomb.start.y << std::endl;
+        }
+    }
+
+    save << vEvils.size() << std::endl;
+    if (!vEvils.empty())
+    {
+        for (int i = 0; i < vEvils.size(); ++i)
+        {
+            save << vEvils[i]->type << std::endl;
+            save << vEvils[i]->start.x << std::endl;
+            save << vEvils[i]->start.y << std::endl;
+            save << vEvils[i]->lifes << std::endl;
+        }
+    }
+
+    save << vSouls.size() << std::endl;
+    if (!vSouls.empty())
+    {
+        for (int i = 0; i < vSouls.size(); ++i)
+        {
+            save << vSouls[i]->start.x << std::endl;
+            save << vSouls[i]->start.y << std::endl;
+        }
+    }
+
+    save << vPotions.size() << std::endl;
+    if (!vPotions.empty())
+    {
+        for (int i = 0; i < vPotions.size(); ++i)
+        {
+            save << vPotions[i].start.x << std::endl;
+            save << vPotions[i].start.y << std::endl;
+        }
+    }
+
+    save.close();
+
+    if (sound)mciSendString(L"play .\\res\\snd\\save.wav", NULL, NULL, NULL);
+
+    MessageBox(bHwnd, L"Играта е запазена !", L"Запис !", MB_OK | MB_APPLMODAL | MB_ICONINFORMATION);
+}
+void LoadGame()
+{
+    int result{ 0 };
+    CheckFile(save_file, &result);
+
+    if (result == FILE_EXIST)
+    {
+        if (sound)mciSendString(L"play .\\res\\snd\\exclamation.wav", NULL, NULL, NULL);
+        if (MessageBox(bHwnd, L"Ако продължиш, губиш прогреса по тази игра !\n\nНаистина ли зареждаш записаната игра ?",
+            L"Зареждане", MB_YESNO | MB_APPLMODAL | MB_ICONQUESTION) == IDNO)return;
+    }
+    else
+    {
+        if (sound)mciSendString(L"play .\\res\\snd\\negative.wav", NULL, NULL, NULL);
+        MessageBox(bHwnd, L"Все още липсва записана игра !\n\nПостарай се повече !", L"Липсва файл !",
+            MB_OK | MB_APPLMODAL | MB_ICONEXCLAMATION);
+        return;
+    }
+
+    ClearMem(&Hero);
+    Hero = dll::Factory(hero, (float)(RandMachine(10, 800)), ground - 80.0f);
+
+    vTombs.clear();
+
+    if (!vEvils.empty())
+        for (int i = 0; i < vEvils.size(); ++i)ClearMem(&vEvils[i]);
+    vEvils.clear();
+
+    if (!vSouls.empty())
+        for (int i = 0; i < vSouls.size(); ++i)ClearMem(&vSouls[i]);
+    vSouls.clear();
+
+    vPotions.clear();
+
+    std::wifstream save(save_file);
+
+    save >> hero_killed;
+    if (hero_killed)GameOver();
+
+    save >> score;
+    save >> level;
+
+    save >> saved_souls;
+    save >> killed_souls;
+
+    for (int i = 0; i < 16; ++i)
+    {
+        int letter = 0;
+        save >> letter;
+        current_player[i] = static_cast<wchar_t>(letter);
+    }
+    save >> name_set;
+
+    float tx{ 0 };
+    float ty{ 0 };
+    save >> tx;
+    save >> ty;
+    save >> result;
+
+    Hero = dll::Factory(hero, tx, ty);
+    Hero->lifes = result;
+
+    save >> result;
+    if (result > 0)
+    {
+        for (int i = 0; i < result; ++i)
+        {
+            int atype{ 0 };
+            float ax{ 0 };
+            float ay{ 0 };
+
+            save >> atype;
+            save >> ax;
+            save >> ay;
+            
+            switch ((unsigned char)(atype))
+            {
+            case tomb:
+                vTombs.push_back(TOMBS(tomb, dll::PROTON(ax, ay, 150.0f, 147.0f)));
+                break;
+            
+            case house1:
+                vTombs.push_back(TOMBS(house1, dll::PROTON(ax, ay, 189.0f, 200.0f)));
+                break;
+
+            case house2:
+                vTombs.push_back(TOMBS(house2, dll::PROTON(ax,ay,182.0f, 180.0f)));
+                break;
+                
+            case house3:
+                vTombs.push_back(TOMBS(house2, dll::PROTON(ax, ay, 186.0f, 180.0f)));
+                break;
+            }
+        }
+    }
+
+    save >> result;
+    if (result > 0)
+    {
+        for (int i = 0; i < result; ++i)
+        {
+            int atype{ 0 };
+            float ax{ 0 };
+            float ay{ 0 };
+            int alife{ 0 };
+            
+            save >> atype;
+            save >> ax;
+            save >> ay;
+            save >> alife;
+
+            vEvils.push_back(dll::Factory((unsigned char)(atype), ax, ay));
+            vEvils.back()->lifes = alife;
+        }
+    }
+
+    save >> result;
+    if (result > 0)
+    {
+        for (int i = 0; i < result; ++i)
+        {
+            float ax = 0;
+            float ay = 0;
+
+            save >> ax;
+            save >> ay;
+            vSouls.push_back(dll::Factory(soul, ax, ay));
+        }
+    }
+
+    save >> result;
+    if (result > 0)
+    {
+        for (int i = 0; i < result; ++i)
+        {
+            float ax = 0;
+            float ay = 0;
+
+            save >> ax;
+            save >> ay;
+            vPotions.push_back(dll::PROTON(ax, ay, 22.0f, 26.0f));
+        }
+    }
+
+    save.close();
+
+    if (sound)mciSendString(L"play .\\res\\snd\\save.wav", NULL, NULL, NULL);
+
+    MessageBox(bHwnd, L"Играта е заредена !", L"Зареждане !", MB_OK | MB_APPLMODAL | MB_ICONINFORMATION);
+}
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
 {
