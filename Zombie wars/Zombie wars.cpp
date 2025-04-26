@@ -228,10 +228,81 @@ void ErrExit(int what)
     std::remove(tmp_file);
     exit(1);
 }
+BOOL CheckRecord()
+{
+    if (score < 1)return no_record;
 
+    int result{ 0 };
+    CheckFile(record_file, &result);
+
+    if (result == FILE_NOT_EXIST)
+    {
+        std::wofstream rec(record_file);
+        rec << score << std::endl;
+        for (int i = 0; i < 16; ++i)rec << static_cast<int>(current_player[i]) << std::endl;
+        rec.close();
+        return first_record;
+    }
+    else
+    {
+        std::wifstream check(record_file);
+        check >> result;
+        check.close();
+    }
+
+    if (result < score)
+    {
+        std::wofstream rec(record_file);
+        rec << score << std::endl;
+        for (int i = 0; i < 16; ++i)rec << static_cast<int>(current_player[i]) << std::endl;
+        rec.close();
+        return record;
+    }
+
+    return no_record;
+}
 void GameOver()
 {
     PlaySound(NULL, NULL, NULL);
+
+    switch (CheckRecord())
+    {
+    case no_record:
+        if (HgltBrush && bigFormat)
+        {
+            Draw->BeginDraw();
+            Draw->DrawTextW(L"ЗОМБИТАТА ПОБЕДИХА !", 21, bigFormat, D2D1::RectF(20.0f, 300.0f, scr_width, scr_height), HgltBrush);
+            Draw->EndDraw();
+            if (sound)PlaySound(L".\\res\\snd\\loose.wav", NULL, SND_SYNC);
+            else Sleep(3000);
+            break;
+        }
+        break;
+
+    case first_record:
+        if (HgltBrush && bigFormat)
+        {
+            Draw->BeginDraw();
+            Draw->DrawTextW(L"ПЪРВИ РЕКОРД НА ИГРАТА !", 25, bigFormat, D2D1::RectF(20.0f, 300.0f, scr_width, scr_height), HgltBrush);
+            Draw->EndDraw();
+            if (sound)PlaySound(L".\\res\\snd\\record.wav", NULL, SND_SYNC);
+            else Sleep(3000);
+            break;
+        }
+        break;
+
+    case record:
+        if (HgltBrush && bigFormat)
+        {
+            Draw->BeginDraw();
+            Draw->DrawTextW(L"СВЕТОВЕН РЕКОРД НА ИГРАТА !", 28, bigFormat, D2D1::RectF(5.0f, 300.0f, scr_width, scr_height), HgltBrush);
+            Draw->EndDraw();
+            if (sound)PlaySound(L".\\res\\snd\\record.wav", NULL, SND_SYNC);
+            else Sleep(3000);
+            break;
+        }
+        break;
+    }
 
     bMsg.message = WM_QUIT;
     bMsg.wParam = 0;
