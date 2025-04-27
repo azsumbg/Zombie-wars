@@ -933,6 +933,71 @@ void LoadGame()
 
     MessageBox(bHwnd, L"Играта е заредена !", L"Зареждане !", MB_OK | MB_APPLMODAL | MB_ICONINFORMATION);
 }
+void ShowHelp()
+{
+    int result = 0;
+    CheckFile(help_file, &result);
+    if (result == FILE_NOT_EXIST)
+    {
+        if (sound)mciSendString(L"play .\\res\\snd\\negative.wav", NULL, NULL, NULL);
+        MessageBox(bHwnd, L"Липсва помощна информация за играта !\n\nСвържете се с разработчика !", L"Липсва файл !",
+            MB_OK | MB_APPLMODAL | MB_ICONEXCLAMATION);
+        return;
+    }
+
+    std::wifstream help(help_file);
+
+    wchar_t help_txt[1000]{ L"\0" };
+
+    help >> result;
+
+    for (int i = 0; i < result; ++i)
+    {
+        int letter = 0;
+        help >> letter;
+        help_txt[i] = static_cast<wchar_t>(letter);
+    }
+
+    help.close();
+
+    Draw->BeginDraw();
+
+    Draw->DrawBitmap(bmpIntro[intro_frame], D2D1::RectF(0, 0, scr_width, scr_height));
+    --intro_frame_delay;
+    if (intro_frame_delay < 0)
+    {
+        intro_frame_delay = 8;
+        ++intro_frame;
+        if (intro_frame > 9)intro_frame = 0;
+    }
+
+    if (statusBckgBrush && b1BckgBrush && b2BckgBrush && b3BckgBrush && TxtBrush && HgltBrush && InactBrush && nrmFormat && midFormat)
+    {
+        Draw->FillRectangle(D2D1::RectF(0, 0, scr_width, 50.0f), statusBckgBrush);
+        Draw->FillRoundedRectangle(D2D1::RoundedRect(b1Rect, 10.0f, 8.0f), b1BckgBrush);
+        Draw->FillRoundedRectangle(D2D1::RoundedRect(b2Rect, 10.0f, 8.0f), b2BckgBrush);
+        Draw->FillRoundedRectangle(D2D1::RoundedRect(b3Rect, 10.0f, 8.0f), b3BckgBrush);
+
+        if (name_set)Draw->DrawTextW(L"ИМЕ НА ГЕРОЙ", 13, nrmFormat, b1Txt1Rect, InactBrush);
+        else
+        {
+            if (b1Hglt)Draw->DrawTextW(L"ИМЕ НА ГЕРОЙ", 13, nrmFormat, b1Txt1Rect, HgltBrush);
+            else Draw->DrawTextW(L"ИМЕ НА ГЕРОЙ", 13, nrmFormat, b1Txt1Rect, TxtBrush);
+        }
+
+        if (b2Hglt)Draw->DrawTextW(L"ЗВУЦИ ON / OFF", 15, nrmFormat, b2Txt2Rect, HgltBrush);
+        else Draw->DrawTextW(L"ЗВУЦИ ON / OFF", 15, nrmFormat, b2Txt2Rect, TxtBrush);
+
+        if (b3Hglt)Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, HgltBrush);
+        else Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, TxtBrush);
+
+        Draw->DrawTextW(help_txt, result, midFormat, D2D1::RectF(20.0f, 100.0f, scr_width, scr_height), HgltBrush);
+    }
+
+    Draw->EndDraw();
+
+    if (sound)mciSendString(L"play .\\res\\snd\\showhelp.wav", NULL, NULL, NULL);
+}
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -1130,7 +1195,17 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
             SendMessage(hwnd, WM_CLOSE, NULL, NULL);
             break;
 
+        case mSave:
+            pause = true;
+            SaveGame();
+            pause = false;
+            break;
 
+        case mLoad:
+            pause = true;
+            LoadGame();
+            pause = false;
+            break;
 
         case mHoF:
             pause = true;
@@ -1155,7 +1230,37 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
                 if (DialogBox(bIns, MAKEINTRESOURCE(IDD_PLAYER), hwnd, &DlgProc) == IDOK)name_set = true;
                 break;
             }
-
+            if (LOWORD(lParam) >= b2Rect.left && LOWORD(lParam) <= b2Rect.right)
+            {
+                if (sound)
+                {
+                    sound = false;
+                    PlaySound(NULL, NULL, NULL);
+                    break;
+                }
+                else
+                {
+                    sound = true;
+                    PlaySound(sound_file, NULL, SND_ASYNC | SND_LOOP);
+                    break;
+                }
+            }
+            if (LOWORD(lParam) >= b3Rect.left && LOWORD(lParam) <= b3Rect.right)
+            {
+                if (!show_help)
+                {
+                    show_help = true;
+                    pause = true;
+                    ShowHelp();
+                    break;
+                }
+                else
+                {
+                    show_help = false;
+                    pause = false;
+                    break;
+                }
+            }
         }
         else
         {
@@ -1797,6 +1902,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     || Hero->start.y >= (*evil)->end.y || Hero->end.y <= (*evil)->start.y))
                 {
                     Hero->in_battle = true;
+
+                    if (sound)mciSendString(L"play .\\res\\snd\\hurt.wav", NULL, NULL, NULL);
 
                     (*evil)->lifes -= Hero->Attack();
                     if ((*evil)->lifes <= 0)
