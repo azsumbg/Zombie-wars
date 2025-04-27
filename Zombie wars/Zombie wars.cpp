@@ -26,7 +26,7 @@ constexpr wchar_t Ltmp_file[]{ L".\\res\\data\\temp.dat" };
 constexpr wchar_t save_file[]{ L".\\res\\data\\save.dat" };
 constexpr wchar_t record_file[]{ L".\\res\\data\\record.dat" };
 constexpr wchar_t help_file[]{ L".\\res\\data\\help.dat" };
-constexpr wchar_t sound_file[]{ L".\\res\\snd\\sound.wav" };
+constexpr wchar_t sound_file[]{ L".\\res\\snd\\main.wav" };
 
 constexpr int mNew{ 1001 };
 constexpr int mLvl{ 1002 };
@@ -991,7 +991,7 @@ void ShowHelp()
         if (b3Hglt)Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, HgltBrush);
         else Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, TxtBrush);
 
-        Draw->DrawTextW(help_txt, result, midFormat, D2D1::RectF(20.0f, 100.0f, scr_width, scr_height), HgltBrush);
+        Draw->DrawTextW(help_txt, result, midFormat, D2D1::RectF(50.0f, 120.0f, scr_width, scr_height), HgltBrush);
     }
 
     Draw->EndDraw();
